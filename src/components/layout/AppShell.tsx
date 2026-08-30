@@ -6,6 +6,8 @@ import { navItems } from '@/app/nav-config'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useSession } from '@/features/auth/use-auth'
+import { useRealtime } from '@/hooks/use-realtime'
+import { NotificationBell } from './NotificationBell'
 import { ThemeToggle } from './ThemeToggle'
 import { UserMenu } from './UserMenu'
 
@@ -58,6 +60,7 @@ function Sidebar({ onClose }: { onClose?: () => void }) {
 
 export function AppShell() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  useRealtime()
 
   return (
     <div className="flex min-h-svh bg-background">
@@ -91,7 +94,10 @@ export function AppShell() {
           >
             <Menu />
           </Button>
-          <ThemeToggle className="ml-auto" />
+          <div className="ml-auto flex items-center gap-1">
+            <NotificationBell />
+            <ThemeToggle />
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
