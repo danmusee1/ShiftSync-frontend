@@ -19,4 +19,13 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // shadcn/ui-style primitives intentionally export variants/subcomponents
+    // (e.g. `buttonVariants` alongside `Button`) from the same file — that's
+    // the established convention for this component layer, not an accident.
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])
