@@ -1,21 +1,35 @@
+import { Suspense, type ComponentType } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 
 import { AppShell } from '@/components/layout/AppShell'
-import { AdminAuditPage } from '@/features/admin/audit/AdminAuditPage'
-import { AdminLocationsPage } from '@/features/admin/locations/AdminLocationsPage'
-import { AdminSkillsPage } from '@/features/admin/skills/AdminSkillsPage'
-import { AdminUsersPage } from '@/features/admin/users/AdminUsersPage'
-import { AvailabilityPage } from '@/features/availability/AvailabilityPage'
+import { PageLoader } from '@/components/layout/PageLoader'
 import { LoginPage } from '@/features/auth/LoginPage'
-import { CompliancePage } from '@/features/compliance/CompliancePage'
-import { DashboardPage } from '@/features/dashboard/DashboardPage'
-import { FairnessPage } from '@/features/fairness/FairnessPage'
-import { MySchedulePage } from '@/features/my-schedule/MySchedulePage'
-import { OnDutyPage } from '@/features/on-duty/OnDutyPage'
-import { SchedulePage } from '@/features/scheduling/SchedulePage'
-import { ApprovalQueuePage } from '@/features/swaps/ApprovalQueuePage'
-import { SwapsPage } from '@/features/swaps/SwapsPage'
+import {
+  AdminAuditPage,
+  AdminLocationsPage,
+  AdminSkillsPage,
+  AdminUsersPage,
+  ApprovalQueuePage,
+  AvailabilityPage,
+  CompliancePage,
+  DashboardPage,
+  FairnessPage,
+  MySchedulePage,
+  OnDutyPage,
+  SchedulePage,
+  SwapsPage,
+} from './lazy-pages'
 import { ProtectedRoute } from './ProtectedRoute'
+
+/** One Suspense boundary per route element, so switching pages shows a
+ * lightweight loader instead of the whole shell flashing blank. */
+function page(Component: ComponentType) {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <Component />
+    </Suspense>
+  )
+}
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -25,32 +39,32 @@ export const router = createBrowserRouter([
       {
         element: <AppShell />,
         children: [
-          { path: '/', element: <DashboardPage /> },
+          { path: '/', element: page(DashboardPage) },
           {
             element: <ProtectedRoute roles={['ADMIN', 'MANAGER']} />,
             children: [
-              { path: '/schedule', element: <SchedulePage /> },
-              { path: '/approvals', element: <ApprovalQueuePage /> },
-              { path: '/on-duty', element: <OnDutyPage /> },
-              { path: '/compliance', element: <CompliancePage /> },
-              { path: '/fairness', element: <FairnessPage /> },
+              { path: '/schedule', element: page(SchedulePage) },
+              { path: '/approvals', element: page(ApprovalQueuePage) },
+              { path: '/on-duty', element: page(OnDutyPage) },
+              { path: '/compliance', element: page(CompliancePage) },
+              { path: '/fairness', element: page(FairnessPage) },
             ],
           },
           {
             element: <ProtectedRoute roles={['STAFF']} />,
             children: [
-              { path: '/my-schedule', element: <MySchedulePage /> },
-              { path: '/availability', element: <AvailabilityPage /> },
-              { path: '/swaps', element: <SwapsPage /> },
+              { path: '/my-schedule', element: page(MySchedulePage) },
+              { path: '/availability', element: page(AvailabilityPage) },
+              { path: '/swaps', element: page(SwapsPage) },
             ],
           },
           {
             element: <ProtectedRoute roles={['ADMIN']} />,
             children: [
-              { path: '/admin/users', element: <AdminUsersPage /> },
-              { path: '/admin/locations', element: <AdminLocationsPage /> },
-              { path: '/admin/skills', element: <AdminSkillsPage /> },
-              { path: '/admin/audit', element: <AdminAuditPage /> },
+              { path: '/admin/users', element: page(AdminUsersPage) },
+              { path: '/admin/locations', element: page(AdminLocationsPage) },
+              { path: '/admin/skills', element: page(AdminSkillsPage) },
+              { path: '/admin/audit', element: page(AdminAuditPage) },
             ],
           },
         ],
