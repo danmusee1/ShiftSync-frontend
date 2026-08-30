@@ -4,6 +4,7 @@ import { Radio } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ErrorState } from '@/components/layout/ErrorState'
 import { useLocations } from '@/hooks/use-locations'
 import { useOnDuty } from '@/hooks/use-timeclock'
 import { initials } from '@/lib/format'
@@ -45,6 +46,8 @@ export function OnDutyPage() {
           <Skeleton className="h-14" />
           <Skeleton className="h-14" />
         </div>
+      ) : onDuty.isError ? (
+        <ErrorState message="Could not load who's on duty." onRetry={() => onDuty.refetch()} />
       ) : !onDuty.data || onDuty.data.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
           Nobody's clocked in at {location?.name ?? 'this location'} right now.

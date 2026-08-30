@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ShiftTimeSummary } from '@/components/domain/ShiftTimeSummary'
+import { ErrorState } from '@/components/layout/ErrorState'
 import { useApproveSwap, usePendingApprovalSwaps, useRejectSwap } from '@/hooks/use-swap-requests'
 import { useUser } from '@/hooks/use-users'
 import { fullName } from '@/lib/format'
@@ -132,6 +133,8 @@ export function ApprovalQueuePage() {
           <Skeleton className="h-16" />
           <Skeleton className="h-16" />
         </div>
+      ) : pending.isError ? (
+        <ErrorState message="Could not load pending approvals." onRetry={() => pending.refetch()} />
       ) : !pending.data || pending.data.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
           Nothing waiting on you right now.
