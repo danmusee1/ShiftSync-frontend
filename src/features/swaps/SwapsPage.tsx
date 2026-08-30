@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConstraintViolationAlert } from '@/components/domain/ConstraintViolationAlert'
 import { ShiftTimeSummary } from '@/components/domain/ShiftTimeSummary'
 import { SWAP_STATUS_BADGE_VARIANT, SWAP_STATUS_LABELS } from '@/components/domain/swap-request-labels'
+import { ErrorState } from '@/components/layout/ErrorState'
 import { useSession } from '@/features/auth/use-auth'
 import {
   useAcceptSwap,
@@ -144,6 +145,8 @@ export function SwapsPage() {
         <TabsContent value="mine" className="space-y-2">
           {myRequests.isLoading ? (
             <Skeleton className="h-16" />
+          ) : myRequests.isError ? (
+            <ErrorState message="Could not load your requests." onRetry={() => myRequests.refetch()} />
           ) : !myRequests.data || myRequests.data.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
               No swap or drop requests yet.
@@ -158,6 +161,8 @@ export function SwapsPage() {
         <TabsContent value="open" className="space-y-2">
           {openDrops.isLoading ? (
             <Skeleton className="h-16" />
+          ) : openDrops.isError ? (
+            <ErrorState message="Could not load open shifts." onRetry={() => openDrops.refetch()} />
           ) : !openDrops.data || openDrops.data.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
               No open shifts right now.

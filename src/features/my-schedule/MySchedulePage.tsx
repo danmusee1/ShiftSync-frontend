@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ErrorState } from '@/components/layout/ErrorState'
 import { useSession } from '@/features/auth/use-auth'
 import { useScheduleWeek, useScheduleWeeksForLocation } from '@/features/scheduling/hooks/use-schedule-week'
 import { WeekNavigator } from '@/features/scheduling/WeekNavigator'
@@ -77,6 +78,7 @@ export function MySchedulePage() {
   const weekDetail = useScheduleWeek(week?.id)
 
   const isLoading = locationsLoading || weeks.isLoading || (!!week && weekDetail.isLoading)
+  const isError = weeks.isError || weekDetail.isError
 
   const myShifts = (weekDetail.data?.shifts ?? [])
     .filter((shift) => shift.assignments?.some((a) => a.staffId === user?.id && a.status === 'ASSIGNED'))
@@ -133,6 +135,14 @@ export function MySchedulePage() {
                 <Skeleton key={i} className="h-32" />
               ))}
             </div>
+          ) : isError ? (
+            <ErrorState
+              message="Could not load your schedule."
+              onRetry={() => {
+                weeks.refetch()
+                weekDetail.refetch()
+              }}
+            />
           ) : !week ? (
             <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
               No published schedule for this week yet.
