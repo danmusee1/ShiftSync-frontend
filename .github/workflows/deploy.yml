@@ -1,0 +1,131 @@
+# ============================================================
+#  GitHub Actions — Vite SPA → VPS (Docker + SSH)
+#  Mirrors the backend's pipeline (shift-sync/.github/workflows/deploy.yml):
+#  builds a container image in CI, ships it to the VPS over the existing SSH
+#  connection (docker save | ssh | docker load), and runs it there. No
+#  registry, no extra credentials beyond SSH.
+# ============================================================
+
+name: Deploy
+
+on:
+  push:
+    branches: [development, main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── STAGE 1 — VALIDATE ────────────────────────────────────
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.3'
+          cache: 'npm'
+      - run: node -v
+      - run: npm install --no-audit --no-fund
+      - run: npx tsc -b
+      - run: npm run lint
+
+  # ── STAGE 2 — BUILD IMAGE ─────────────────────────────────
+  build:
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        # No VITE_API_URL build arg — src/api/client.ts falls back to the
+        # production API (https://shiftsync.civic-nexus.com) when it's
+        # unset, so this always bakes in the real backend, never localhost.
+        run: docker build -t shiftsync-frontend:${{ github.sha }} .
+
+      - name: Save image to a tarball
+        run: docker save shiftsync-frontend:${{ github.sha }} | gzip > shiftsync-frontend.tar.gz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-${{ github.sha }}
+          path: shiftsync-frontend.tar.gz
+          retention-days: 1
+
+  # ── STAGE 3 — DEPLOY ──────────────────────────────────────
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: docker-image-${{ github.sha }}
+          path: .
+
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "${{ secrets.VPS_PORT }}" "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Ship image to the VPS
+        run: |
+          rsync -avz \
+            -e "ssh -p ${{ secrets.VPS_PORT }} -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
+            shiftsync-frontend.tar.gz \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.FRONTEND_DEPLOY_PATH }}/
+
+      - name: Load image, swap container, health-check
+        env:
+          IMAGE_TAG: shiftsync-frontend:${{ github.sha }}
+        run: |
+          ssh -p "${{ secrets.VPS_PORT }}" -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "IMAGE_TAG='$IMAGE_TAG' bash -s" << 'REMOTE'
+              set -e
+              cd "${{ secrets.FRONTEND_DEPLOY_PATH }}"
+
+              echo "-> Loading Docker image..."
+              docker load < shiftsync-frontend.tar.gz
+              rm -f shiftsync-frontend.tar.gz
+
+              echo "-> Stopping previous container (if any)..."
+              docker stop shiftsync-frontend 2>/dev/null || true
+              docker rm shiftsync-frontend 2>/dev/null || true
+
+              echo "-> Starting new container..."
+              # Bridge networking, not --network host — this container serves
+              # only static files and never needs to reach the VPS's local
+              # Postgres/Redis, unlike the backend. Bound to loopback only;
+              # the VPS's existing nginx (shiftsync-app.civic-nexus.com) is
+              # what actually terminates TLS and faces the internet.
+              docker run -d --name shiftsync-frontend --restart unless-stopped \
+                --log-opt max-size=10m --log-opt max-file=3 \
+                -p 127.0.0.1:4001:80 "$IMAGE_TAG"
+
+              echo "-> Waiting for health check..."
+              for i in $(seq 1 15); do
+                if curl -fsS http://127.0.0.1:4001/ > /dev/null 2>&1; then
+                  echo "Health check passed."
+                  break
+                fi
+                if [ "$i" = 15 ]; then
+                  echo "Health check failed after 15 attempts — check 'docker logs shiftsync-frontend'."
+                  exit 1
+                fi
+                sleep 2
+              done
+
+              echo "-> Pruning old images (keeping the 3 most recent for quick rollback)..."
+              docker image prune -f > /dev/null 2>&1 || true
+              docker images shiftsync-frontend --format '{{.Tag}}' | tail -n +4 | \
+                xargs -r -I{} docker rmi "shiftsync-frontend:{}" 2>/dev/null || true
+
+              echo "Deploy complete - $(date)"
+          REMOTE
