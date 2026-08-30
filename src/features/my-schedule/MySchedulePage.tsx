@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeftRight, LogIn, LogOut, Timer } from 'lucide-react'
+import { ArrowLeftRight, LogOut, Timer } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -163,6 +163,7 @@ export function MySchedulePage() {
                               {shiftDurationHours(shift.startAt, shift.endAt).toFixed(1)}h
                             </p>
                             {shift.requiredSkill && <Badge variant="secondary">{shift.requiredSkill.name}</Badge>}
+                            {user && <ClockControls shift={shift} staffId={user.id} />}
                             {isUpcoming && (
                               <div className="flex gap-1.5 pt-1">
                                 <Button

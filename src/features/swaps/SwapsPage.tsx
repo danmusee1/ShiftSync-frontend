@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ConstraintViolationAlert } from '@/components/domain/ConstraintViolationAlert'
+import { ShiftTimeSummary } from '@/components/domain/ShiftTimeSummary'
 import { SWAP_STATUS_BADGE_VARIANT, SWAP_STATUS_LABELS } from '@/components/domain/swap-request-labels'
 import { useSession } from '@/features/auth/use-auth'
-import { useLocation } from '@/hooks/use-locations'
 import {
   useAcceptSwap,
   useCancelSwapRequest,
@@ -18,28 +18,7 @@ import {
   useOpenDrops,
   useSwapRequestsForStaff,
 } from '@/hooks/use-swap-requests'
-import { formatLocalDate, formatLocalTimeRange } from '@/lib/time'
-import type { ConstraintViolation, Shift, StaffSuggestion, SwapRequest } from '@/types/domain'
-
-// Shifts here can belong to a location the viewer isn't necessarily assigned
-// to (e.g. an open drop), so the timezone is looked up per-shift rather than
-// assumed from the viewer's own certified locations.
-function ShiftSummary({ shift }: { shift: Shift }) {
-  const { data: location } = useLocation(shift.locationId)
-  const timezone = location?.timezone
-
-  return (
-    <div>
-      <p className="text-sm font-medium">
-        {timezone ? formatLocalDate(shift.startAt, timezone) : '…'}
-      </p>
-      <p className="text-xs text-muted-foreground">
-        {timezone ? formatLocalTimeRange(shift.startAt, shift.endAt, timezone) : '…'}
-        {shift.requiredSkill && ` · ${shift.requiredSkill.name}`}
-      </p>
-    </div>
-  )
-}
+import type { ConstraintViolation, StaffSuggestion, SwapRequest } from '@/types/domain'
 
 function MyRequestRow({ request, myId }: { request: SwapRequest; myId: string }) {
   const accept = useAcceptSwap()
@@ -56,7 +35,7 @@ function MyRequestRow({ request, myId }: { request: SwapRequest; myId: string })
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card p-3">
       <div className="flex items-center gap-3">
         <Badge variant={SWAP_STATUS_BADGE_VARIANT[request.status]}>{SWAP_STATUS_LABELS[request.status]}</Badge>
-        {shift && <ShiftSummary shift={shift} />}
+        {shift && <ShiftTimeSummary shift={shift} />}
       </div>
       <div className="flex items-center gap-3">
         <p className="text-xs text-muted-foreground">
@@ -115,7 +94,7 @@ function OpenDropRow({ request }: { request: SwapRequest }) {
   return (
     <div className="space-y-2 rounded-lg border border-border bg-card p-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <ShiftSummary shift={shift} />
+        <ShiftTimeSummary shift={shift} />
         <Button
           size="sm"
           onClick={() =>
