@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ErrorState } from '@/components/layout/ErrorState'
 import { roleLabel } from '@/lib/format'
 import { useSetUserActive, useUsers } from '@/hooks/use-users'
 import type { Role, User } from '@/types/domain'
@@ -60,6 +61,8 @@ export function AdminUsersPage() {
           <Skeleton className="h-12" />
           <Skeleton className="h-12" />
         </div>
+      ) : users.isError ? (
+        <ErrorState message="Could not load users." onRetry={() => users.refetch()} />
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-sm">

@@ -13,10 +13,11 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ErrorState } from '@/components/layout/ErrorState'
 import { useCreateSkill, useSkills } from '@/hooks/use-skills'
 
 export function AdminSkillsPage() {
-  const { data: skills, isLoading } = useSkills()
+  const { data: skills, isLoading, isError, refetch } = useSkills()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const createSkill = useCreateSkill()
@@ -41,6 +42,8 @@ export function AdminSkillsPage() {
 
       {isLoading ? (
         <Skeleton className="h-10" />
+      ) : isError ? (
+        <ErrorState message="Could not load skills." onRetry={() => refetch()} />
       ) : (
         <div className="flex flex-wrap gap-2">
           {skills?.map((skill) => (

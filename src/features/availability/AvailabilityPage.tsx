@@ -103,6 +103,8 @@ export function AvailabilityPage() {
 
         {exceptions.isLoading ? (
           <Skeleton className="h-24" />
+        ) : exceptions.isError ? (
+          <ErrorState message="Could not load your exceptions." onRetry={() => exceptions.refetch()} />
         ) : !exceptions.data || exceptions.data.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
             No exceptions on file.

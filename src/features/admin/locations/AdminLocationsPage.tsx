@@ -4,6 +4,7 @@ import { Plus, UserPlus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ErrorState } from '@/components/layout/ErrorState'
 import { useLocations, useUpdateLocation } from '@/hooks/use-locations'
 import type { Location } from '@/types/domain'
 import { AssignManagerDialog } from './AssignManagerDialog'
@@ -25,7 +26,7 @@ function ToggleActiveButton({ location }: { location: Location }) {
 }
 
 export function AdminLocationsPage() {
-  const { data: locations, isLoading } = useLocations()
+  const { data: locations, isLoading, isError, refetch } = useLocations()
   const [formOpen, setFormOpen] = useState(false)
   const [editTarget, setEditTarget] = useState<Location | null>(null)
   const [managerTarget, setManagerTarget] = useState<Location | null>(null)
@@ -48,6 +49,8 @@ export function AdminLocationsPage() {
           <Skeleton className="h-14" />
           <Skeleton className="h-14" />
         </div>
+      ) : isError ? (
+        <ErrorState message="Could not load locations." onRetry={() => refetch()} />
       ) : (
         <div className="space-y-2">
           {locations?.map((location) => (
