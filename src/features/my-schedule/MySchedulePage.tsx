@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeftRight, LogOut } from 'lucide-react'
+import { ArrowLeftRight, LogIn, LogOut, Timer } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -9,10 +9,57 @@ import { useSession } from '@/features/auth/use-auth'
 import { useScheduleWeek, useScheduleWeeksForLocation } from '@/features/scheduling/hooks/use-schedule-week'
 import { WeekNavigator } from '@/features/scheduling/WeekNavigator'
 import { useLocations } from '@/hooks/use-locations'
+import { useClockIn, useClockOut } from '@/hooks/use-timeclock'
 import { addDaysToDateStr, formatLocalTimeRange, localDayOfWeek, shiftDurationHours, upcomingSunday, WEEKDAY_LABELS } from '@/lib/time'
 import type { Shift } from '@/types/domain'
 import { RequestDropDialog } from './RequestDropDialog'
 import { RequestSwapDialog } from './RequestSwapDialog'
+
+const CLOCK_IN_WINDOW_MINUTES = 15
+
+function ClockControls({ shift, staffId }: { shift: Shift; staffId: string }) {
+  const clockIn = useClockIn()
+  const clockOut = useClockOut()
+
+  const assignment = shift.assignments?.find((a) => a.staffId === staffId)
+  if (!assignment) return null
+
+  const now = new Date()
+  const earliestClockIn = new Date(new Date(shift.startAt).getTime() - CLOCK_IN_WINDOW_MINUTES * 60_000)
+  const inWindow = now >= earliestClockIn && now <= new Date(shift.endAt)
+  if (!inWindow) return null
+
+  if (assignment.clockOutAt) {
+    return <p className="text-xs text-muted-foreground">Clocked out</p>
+  }
+
+  if (assignment.clockInAt) {
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-7 w-full text-xs"
+        onClick={() => clockOut.mutate({ shiftId: shift.id, locationId: shift.locationId })}
+        disabled={clockOut.isPending}
+      >
+        <LogOut className="size-3.5" />
+        Clock out
+      </Button>
+    )
+  }
+
+  return (
+    <Button
+      size="sm"
+      className="h-7 w-full text-xs"
+      onClick={() => clockIn.mutate({ shiftId: shift.id, locationId: shift.locationId })}
+      disabled={clockIn.isPending}
+    >
+      <Timer className="size-3.5" />
+      Clock in
+    </Button>
+  )
+}
 
 export function MySchedulePage() {
   const { user } = useSession()
