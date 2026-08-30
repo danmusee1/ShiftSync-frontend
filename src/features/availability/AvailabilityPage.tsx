@@ -4,6 +4,7 @@ import { Plus, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ErrorState } from '@/components/layout/ErrorState'
 import { useSession } from '@/features/auth/use-auth'
 import {
   useAvailabilityExceptions,
@@ -56,6 +57,8 @@ export function AvailabilityPage() {
               <Skeleton key={i} className="h-24" />
             ))}
           </div>
+        ) : rules.isError ? (
+          <ErrorState message="Could not load your availability." onRetry={() => rules.refetch()} />
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
             {WEEKDAY_LABELS.map((label, day) => (

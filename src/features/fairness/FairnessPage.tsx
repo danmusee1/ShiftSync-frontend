@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ErrorState } from '@/components/layout/ErrorState'
 import { WeekNavigator } from '@/features/scheduling/WeekNavigator'
 import { useDesiredHoursComparison, useHoursDistribution, usePremiumShiftFairness } from '@/hooks/use-fairness'
 import { useLocations } from '@/hooks/use-locations'
@@ -59,6 +60,8 @@ export function FairnessPage() {
         <TabsContent value="hours">
           {hoursDistribution.isLoading ? (
             <Skeleton className="h-40" />
+          ) : hoursDistribution.isError ? (
+            <ErrorState onRetry={() => hoursDistribution.refetch()} />
           ) : !hoursDistribution.data || hoursDistribution.data.length === 0 ? (
             <EmptyState />
           ) : (
@@ -76,6 +79,8 @@ export function FairnessPage() {
         <TabsContent value="premium">
           {premiumShifts.isLoading ? (
             <Skeleton className="h-40" />
+          ) : premiumShifts.isError ? (
+            <ErrorState onRetry={() => premiumShifts.refetch()} />
           ) : !premiumShifts.data || premiumShifts.data.length === 0 ? (
             <EmptyState />
           ) : (
@@ -115,6 +120,8 @@ export function FairnessPage() {
         <TabsContent value="desired">
           {desiredHours.isLoading ? (
             <Skeleton className="h-40" />
+          ) : desiredHours.isError ? (
+            <ErrorState onRetry={() => desiredHours.refetch()} />
           ) : !desiredHours.data || desiredHours.data.length === 0 ? (
             <EmptyState />
           ) : (

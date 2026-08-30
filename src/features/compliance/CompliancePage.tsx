@@ -61,6 +61,8 @@ export function CompliancePage() {
           <Skeleton className="h-12" />
           <Skeleton className="h-12" />
         </div>
+      ) : report.isError ? (
+        <ErrorState message="Could not load the overtime report." onRetry={() => report.refetch()} />
       ) : !report.data || report.data.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
           No hours scheduled for this week yet.
