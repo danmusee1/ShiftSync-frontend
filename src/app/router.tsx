@@ -1,6 +1,10 @@
 import { createBrowserRouter } from 'react-router-dom'
 
 import { AppShell } from '@/components/layout/AppShell'
+import { AdminAuditPage } from '@/features/admin/audit/AdminAuditPage'
+import { AdminLocationsPage } from '@/features/admin/locations/AdminLocationsPage'
+import { AdminSkillsPage } from '@/features/admin/skills/AdminSkillsPage'
+import { AdminUsersPage } from '@/features/admin/users/AdminUsersPage'
 import { AvailabilityPage } from '@/features/availability/AvailabilityPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { CompliancePage } from '@/features/compliance/CompliancePage'
@@ -38,6 +42,15 @@ export const router = createBrowserRouter([
               { path: '/my-schedule', element: <MySchedulePage /> },
               { path: '/availability', element: <AvailabilityPage /> },
               { path: '/swaps', element: <SwapsPage /> },
+            ],
+          },
+          {
+            element: <ProtectedRoute roles={['ADMIN']} />,
+            children: [
+              { path: '/admin/users', element: <AdminUsersPage /> },
+              { path: '/admin/locations', element: <AdminLocationsPage /> },
+              { path: '/admin/skills', element: <AdminSkillsPage /> },
+              { path: '/admin/audit', element: <AdminAuditPage /> },
             ],
           },
         ],
