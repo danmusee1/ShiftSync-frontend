@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ErrorState } from '@/components/layout/ErrorState'
 import { useLocations } from '@/hooks/use-locations'
 import { addDaysToDateStr, localDayOfWeek, upcomingSunday, WEEKDAY_LABELS } from '@/lib/time'
 import type { Shift } from '@/types/domain'
@@ -51,6 +52,7 @@ export function SchedulePage() {
 
   const week = weekDetail.data
   const isLoading = locationsLoading || weekRef.isLoading || weekDetail.isLoading
+  const isError = weekRef.isError || weekDetail.isError
 
   const days = Array.from({ length: 7 }, (_, i) => addDaysToDateStr(weekStartDate, i))
   const shiftsByDay = new Map<string, Shift[]>(days.map((d) => [d, []]))
@@ -125,6 +127,14 @@ export function SchedulePage() {
                 <Skeleton key={i} className="h-48" />
               ))}
             </div>
+          ) : isError ? (
+            <ErrorState
+              message="Could not load this week's schedule."
+              onRetry={() => {
+                weekRef.refetch()
+                weekDetail.refetch()
+              }}
+            />
           ) : (
             week &&
             location && (
