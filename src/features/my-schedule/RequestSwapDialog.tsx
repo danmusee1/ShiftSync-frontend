@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useUsers } from '@/hooks/use-users'
+import { useColleagues } from '@/hooks/use-users'
 import { useRequestSwap } from '@/hooks/use-swap-requests'
 import { formatLocalDate, formatLocalTimeRange } from '@/lib/time'
 import type { Shift } from '@/types/domain'
@@ -29,10 +29,8 @@ interface RequestSwapDialogProps {
 // left unset here (a documented scope simplification, not a backend gap).
 export function RequestSwapDialog({ shift, staffId, locationTimezone, onOpenChange }: RequestSwapDialogProps) {
   const [targetStaffId, setTargetStaffId] = useState('')
-  const { data: staff, isLoading: staffLoading } = useUsers('STAFF')
+  const { data: candidates, isLoading: staffLoading } = useColleagues()
   const requestSwap = useRequestSwap(staffId)
-
-  const candidates = (staff ?? []).filter((s) => s.id !== staffId)
 
   function handleOpenChange(next: boolean) {
     if (!next) setTargetStaffId('')
@@ -59,7 +57,7 @@ export function RequestSwapDialog({ shift, staffId, locationTimezone, onOpenChan
             <SelectValue placeholder="Invite a teammate to take it" />
           </SelectTrigger>
           <SelectContent>
-            {candidates.map((person) => (
+            {candidates?.map((person) => (
               <SelectItem key={person.id} value={person.id}>
                 {person.firstName} {person.lastName}
               </SelectItem>

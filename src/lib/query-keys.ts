@@ -9,6 +9,7 @@ export const queryKeys = {
     all: () => ['users'] as const,
     list: (role?: string) => ['users', 'list', role ?? 'all'] as const,
     detail: (id: string) => ['users', 'detail', id] as const,
+    colleagues: () => ['users', 'colleagues'] as const,
   },
   locations: {
     all: () => ['locations'] as const,

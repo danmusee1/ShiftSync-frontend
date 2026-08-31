@@ -31,6 +31,9 @@ export const usersApi = {
   list: (role?: Role) =>
     apiClient.get<User[]>('/users', { params: role ? { role } : undefined }).then((res) => res.data),
 
+  /** Staff-safe: other active staff certified at a location the caller is also certified at. */
+  listColleagues: () => apiClient.get<User[]>('/users/me/colleagues').then((res) => res.data),
+
   get: (id: string) => apiClient.get<User>(`/users/${id}`).then((res) => res.data),
 
   create: (payload: CreateUserPayload) =>
