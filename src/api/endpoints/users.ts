@@ -10,6 +10,7 @@ export interface CreateUserPayload {
   homeTimezone: string
   notificationChannel?: User['notificationChannel']
   desiredWeeklyHours?: number
+  hourlyRate?: number
 }
 
 export type UpdateUserPayload = Partial<Omit<CreateUserPayload, 'email' | 'password'>> & {

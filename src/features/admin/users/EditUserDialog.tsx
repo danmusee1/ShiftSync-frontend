@@ -36,6 +36,7 @@ export function EditUserDialog({ user, onOpenChange }: EditUserDialogProps) {
       homeTimezone: '',
       notificationChannel: 'IN_APP',
       desiredWeeklyHours: '',
+      hourlyRate: '',
       password: '',
     },
   })
@@ -49,6 +50,7 @@ export function EditUserDialog({ user, onOpenChange }: EditUserDialogProps) {
       homeTimezone: user.homeTimezone,
       notificationChannel: user.notificationChannel,
       desiredWeeklyHours: user.desiredWeeklyHours ? String(user.desiredWeeklyHours) : '',
+      hourlyRate: user.hourlyRate ? String(user.hourlyRate) : '',
       password: '',
     })
   }, [user, form])
@@ -62,6 +64,7 @@ export function EditUserDialog({ user, onOpenChange }: EditUserDialogProps) {
         homeTimezone: values.homeTimezone,
         notificationChannel: values.notificationChannel,
         desiredWeeklyHours: values.desiredWeeklyHours ? Number(values.desiredWeeklyHours) : undefined,
+        hourlyRate: values.hourlyRate ? Number(values.hourlyRate) : undefined,
         password: values.password || undefined,
       },
       { onSuccess: () => onOpenChange(false) },
@@ -181,6 +184,20 @@ export function EditUserDialog({ user, onOpenChange }: EditUserDialogProps) {
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="hourlyRate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hourly rate, USD (optional)</FormLabel>
+                  <FormControl>
+                    <Input type="number" min={0} step="0.01" placeholder="18.50" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}

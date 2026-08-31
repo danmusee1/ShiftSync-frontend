@@ -18,6 +18,11 @@ const STATUS_BADGE: Record<OvertimeStatus, 'success' | 'warning' | 'destructive'
   OVERTIME: 'destructive',
 }
 
+const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+function formatCurrency(amount: number): string {
+  return currencyFormatter.format(amount)
+}
+
 // Mirrors the backend's businessRules.weeklyHoursWarning/weeklyHoursOvertime
 // defaults (35h / 40h) — the frontend has no endpoint to read these live, so
 // this is a display-only assumption that should track the backend config if
@@ -47,10 +52,30 @@ function AssignmentBreakdown({
 }) {
   return (
     <tr>
-      <td colSpan={4} className="bg-muted/30 px-3 py-3">
+      <td colSpan={5} className="bg-muted/30 px-3 py-3">
         <p className="mb-2 text-xs font-medium text-muted-foreground uppercase">
           Every assignment counting toward {row.firstName}'s {row.weeklyHours.toFixed(1)}h this week
         </p>
+        {row.hourlyRate != null && row.totalCost != null ? (
+          <p className="mb-3 text-sm">
+            <span className="text-muted-foreground">At {formatCurrency(row.hourlyRate)}/hr — </span>
+            <span className="font-medium">{formatCurrency(row.regularCost ?? 0)} regular</span>
+            {row.overtimePremium != null && row.overtimePremium > 0 && (
+              <>
+                {' + '}
+                <span className="font-medium text-destructive">
+                  {formatCurrency(row.overtimePremium)} overtime premium
+                </span>
+              </>
+            )}
+            {' = '}
+            <span className="font-semibold">{formatCurrency(row.totalCost)} projected this week</span>
+          </p>
+        ) : (
+          <p className="mb-3 text-sm text-muted-foreground">
+            No hourly rate on file for {row.firstName} — add one from the Users page to see projected cost.
+          </p>
+        )}
         <div className="overflow-x-auto rounded-md border border-border">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-xs text-muted-foreground uppercase">
@@ -110,6 +135,10 @@ export function CompliancePage() {
   const locationId = selectedLocationId || locations?.[0]?.id || ''
   const report = useWeeklyOvertimeReport(weekStartDate, locationId || undefined)
 
+  const totalProjectedCost = (report.data ?? []).reduce((sum, r) => sum + (r.totalCost ?? 0), 0)
+  const totalOvertimePremium = (report.data ?? []).reduce((sum, r) => sum + (r.overtimePremium ?? 0), 0)
+  const staffWithRates = (report.data ?? []).filter((r) => r.hourlyRate != null).length
+
   const timezoneFor = (id: string) => locations?.find((l) => l.id === id)?.timezone ?? 'UTC'
 
   function toggleExpanded(staffId: string) {
@@ -165,49 +194,75 @@ export function CompliancePage() {
           No hours scheduled for this week yet.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left text-xs text-muted-foreground uppercase">
-              <tr>
-                <th className="w-8"></th>
-                <th className="px-3 py-2 font-medium">Staff</th>
-                <th className="px-3 py-2 font-medium">Weekly hours</th>
-                <th className="px-3 py-2 font-medium">Over threshold</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {report.data.map((row) => {
-                const isExpanded = expandedIds.has(row.staffId)
-                return (
-                  <Fragment key={row.staffId}>
-                    <tr
-                      className="cursor-pointer hover:bg-muted/30"
-                      onClick={() => toggleExpanded(row.staffId)}
-                    >
-                      <td className="pl-3">
-                        <Button variant="ghost" size="icon" className="size-6" aria-label="Toggle breakdown">
-                          {isExpanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-                        </Button>
-                      </td>
-                      <td className="px-3 py-2 font-medium">
-                        {row.firstName} {row.lastName}
-                      </td>
-                      <td className="px-3 py-2 tabular-nums">{row.weeklyHours.toFixed(1)}h</td>
-                      <td className="px-3 py-2 tabular-nums">
-                        {row.projectedOvertimeHours > 0 ? `+${row.projectedOvertimeHours.toFixed(1)}h` : '—'}
-                      </td>
-                      <td className="px-3 py-2">
-                        <Badge variant={STATUS_BADGE[row.status]}>{row.status}</Badge>
-                      </td>
-                    </tr>
-                    {isExpanded && <AssignmentBreakdown row={row} timezoneFor={timezoneFor} />}
-                  </Fragment>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {staffWithRates > 0 && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="rounded-lg border border-border bg-card p-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase">
+                  Projected labor cost this week
+                </p>
+                <p className="font-display text-2xl font-bold">{formatCurrency(totalProjectedCost)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {staffWithRates} of {report.data.length} staff have a rate on file
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase">Of which, overtime premium</p>
+                <p className="font-display text-2xl font-bold text-destructive">
+                  {formatCurrency(totalOvertimePremium)}
+                </p>
+                <p className="text-xs text-muted-foreground">The extra cost avoidable without the overtime</p>
+              </div>
+            </div>
+          )}
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/50 text-left text-xs text-muted-foreground uppercase">
+                <tr>
+                  <th className="w-8"></th>
+                  <th className="px-3 py-2 font-medium">Staff</th>
+                  <th className="px-3 py-2 font-medium">Weekly hours</th>
+                  <th className="px-3 py-2 font-medium">Over threshold</th>
+                  <th className="px-3 py-2 font-medium">Projected cost</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {report.data.map((row) => {
+                  const isExpanded = expandedIds.has(row.staffId)
+                  return (
+                    <Fragment key={row.staffId}>
+                      <tr
+                        className="cursor-pointer hover:bg-muted/30"
+                        onClick={() => toggleExpanded(row.staffId)}
+                      >
+                        <td className="pl-3">
+                          <Button variant="ghost" size="icon" className="size-6" aria-label="Toggle breakdown">
+                            {isExpanded ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                          </Button>
+                        </td>
+                        <td className="px-3 py-2 font-medium">
+                          {row.firstName} {row.lastName}
+                        </td>
+                        <td className="px-3 py-2 tabular-nums">{row.weeklyHours.toFixed(1)}h</td>
+                        <td className="px-3 py-2 tabular-nums">
+                          {row.projectedOvertimeHours > 0 ? `+${row.projectedOvertimeHours.toFixed(1)}h` : '—'}
+                        </td>
+                        <td className="px-3 py-2 tabular-nums">
+                          {row.totalCost != null ? formatCurrency(row.totalCost) : '—'}
+                        </td>
+                        <td className="px-3 py-2">
+                          <Badge variant={STATUS_BADGE[row.status]}>{row.status}</Badge>
+                        </td>
+                      </tr>
+                      {isExpanded && <AssignmentBreakdown row={row} timezoneFor={timezoneFor} />}
+                    </Fragment>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   )
