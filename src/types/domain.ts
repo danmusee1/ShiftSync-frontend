@@ -81,6 +81,14 @@ export interface User extends AuthenticatedUser {
   isActive: boolean
   createdAt: string
   updatedAt: string
+  /**
+   * USD/hour. Only ever populated on the admin Users list/create/update
+   * responses (`GET /users`, `POST /users`, `PATCH /users/:id`) — every other
+   * endpoint that returns a User (including a staff member's own view of a
+   * colleague) omits it server-side for privacy, so it'll be `undefined`
+   * there rather than `null`.
+   */
+  hourlyRate?: number | null
 }
 
 export interface Location {
@@ -314,6 +322,13 @@ export interface StaffWeeklyHours {
   weeklyHours: number
   status: OvertimeStatus
   projectedOvertimeHours: number
+  /** USD/hour, or null if this staff member has no rate on file. */
+  hourlyRate: number | null
+  /** All null when hourlyRate is null. */
+  regularCost: number | null
+  /** Just the extra half — what overtime is costing beyond the regular rate. */
+  overtimePremium: number | null
+  totalCost: number | null
   assignments: WeeklyHoursAssignment[]
 }
 

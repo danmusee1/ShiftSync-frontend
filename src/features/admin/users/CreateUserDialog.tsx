@@ -40,6 +40,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       {
         ...values,
         desiredWeeklyHours: values.desiredWeeklyHours ? Number(values.desiredWeeklyHours) : undefined,
+        hourlyRate: values.hourlyRate ? Number(values.hourlyRate) : undefined,
       },
       { onSuccess: () => handleOpenChange(false) },
     )
@@ -186,6 +187,20 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="hourlyRate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hourly rate, USD (optional)</FormLabel>
+                  <FormControl>
+                    <Input type="number" min={0} step="0.01" placeholder="18.50" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
