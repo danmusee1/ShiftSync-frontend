@@ -13,6 +13,14 @@ export function useUsers(role?: Role) {
   })
 }
 
+/** Staff-safe: other active staff certified at a location the caller shares — for swap-target pickers. */
+export function useColleagues() {
+  return useQuery({
+    queryKey: queryKeys.users.colleagues(),
+    queryFn: usersApi.listColleagues,
+  })
+}
+
 export function useUser(id: string | undefined) {
   return useQuery({
     queryKey: queryKeys.users.detail(id ?? ''),
